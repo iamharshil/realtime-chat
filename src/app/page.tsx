@@ -1,34 +1,23 @@
 "use client";
 
-import { faker } from "@faker-js/faker";
-import { nanoid } from "nanoid";
-import { useEffect, useState } from "react";
-
-const STORAGE_KEY = "chat_username";
-
-const generateUsername = () => {
-  return `anonymous-${faker.person.firstName().toLowerCase()}-${nanoid(5)}`;
-};
+import { useMutation } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { useUsername } from "@/hooks/use-username";
+import { client } from "@/lib/client";
 
 export default function Home() {
-  const [username, setUsername] = useState("");
+  const router = useRouter();
+  const { username } = useUsername();
 
-  useEffect(() => {
-    const main = () => {
-      const stored = localStorage.getItem(STORAGE_KEY);
-
-      if (stored) {
-        setUsername(stored);
-        return;
+  // if we call this hook this function get's executed.
+  const { mutate: createRoom } = useMutation({
+    mutationFn: async () => {
+      const res = await client.room.create.post();
+      if (res.status === 200) {
+        router.push(`/room/${res.data?.roomId}`);
       }
-
-      const generated = generateUsername();
-      localStorage.setItem(STORAGE_KEY, generated);
-      setUsername(generated);
-    };
-
-    main();
-  }, []);
+    },
+  });
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
@@ -57,6 +46,7 @@ export default function Home() {
             </div>
 
             <button
+              onClick={() => createRoom()}
               type="button"
               className="w-full bg-zinc-100 text-black p-3 text-sm font-bold hover:bg-zinc-50 hover:text-black transition-colors mt-2 cursor-pointer disabled:opacity-50"
             >
